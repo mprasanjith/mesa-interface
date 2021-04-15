@@ -61,6 +61,7 @@ import { auctionBidsQuery } from 'src/subgraph/AuctionBids'
 //subgraph
 import { auctionsRequest } from 'src/subgraph/Auctions'
 import { fetchAuctions } from 'src/redux/auctionListings'
+import { utils } from 'ethers'
 
 const ChartDescription = styled.div({
   fontStyle: 'normal',
@@ -94,10 +95,6 @@ export function AuctionView() {
 
   const fetchData = () => dispatch(fetchAuctions(auctionsRequest))
 
-  const bids = useSelector<RootState, AuctionBid[]>(state => {
-    return state.BidReducer.bids
-  })
-
   const auction = useSelector<RootState, Auction>(state => {
     const auctions = state.AuctionReducer.auctions.filter(auction => auction.id == params.auctionId)[0]
     return auctions
@@ -107,11 +104,9 @@ export function AuctionView() {
     setModalVisible(true)
   }
 
-  const toggleGraph = () => {
-    if (showGraph || (auction && bids && bids.length > 0)) {
-      setShowGraph(!showGraph)
-    }
-  }
+  const bids = useSelector<RootState, AuctionBid[]>(state => {
+    return state.BidReducer.bids
+  })
 
   useEffect(() => {
     if (!userAddress) {
@@ -124,9 +119,18 @@ export function AuctionView() {
       const auctionBidsRequest = subgraphCall(ENDPOINT, auctionBidsQuery(params.auctionId, auction.type))
       const fetchBids = () => dispatch(fetchAuctionBids(params.auctionId, auction.type, auctionBidsRequest))
       fetchBids()
+    }
+
+    if (bids.length) {
       setClearingPrice(calculateClearingPrice(bids))
     }
   }, [])
+
+  const toggleGraph = () => {
+    if (showGraph || (auction && bids && bids.length > 0)) {
+      setShowGraph(!showGraph)
+    }
+  }
 
   if (!auction) {
     fetchData()
@@ -159,10 +163,13 @@ export function AuctionView() {
                           : isAuctionOpen(auction)
                           ? 'Current Price'
                           : 'Final Price'
+                      } // toFixed(2)
+                      description={
+                        clearingPrice
+                          ? `${(1 / (Number(utils.formatEther(clearingPrice.tokenIn)) || 0)).toFixed(2)} 
+                      ${auction.tokenIn?.symbol}/${auction.tokenOut?.symbol}`
+                          : `0 ${auction.tokenIn?.symbol}/${auction.tokenOut?.symbol}`
                       }
-                      description={`${(1 / (clearingPrice?.tokenIn.toNumber() || 0)).toFixed(2)} DAI/${
-                        auction.tokenOut?.symbol
-                      }`}
                     />
                     <HeaderItem
                       isMobile
@@ -206,9 +213,12 @@ export function AuctionView() {
                           ? 'Current Price'
                           : 'Final Price'
                       }
-                      description={`${(1 / (clearingPrice?.tokenIn.toNumber() || 0)).toFixed(2)} DAI/${
-                        auction.tokenOut?.symbol
-                      }`}
+                      description={
+                        clearingPrice
+                          ? `${(1 / (Number(utils.formatEther(clearingPrice.tokenIn)) || 0)).toFixed(2)} 
+                      ${auction.tokenIn?.symbol}/${auction.tokenOut?.symbol}`
+                          : `0 ${auction.tokenIn?.symbol}/${auction.tokenOut?.symbol}`
+                      }
                     />
                     <HeaderItem
                       title={isAuctionClosed(auction) ? 'Amount Sold' : 'Amount for Sale'}
@@ -279,7 +289,8 @@ export function AuctionView() {
                     height={400}
                     data={bids}
                     userAddress={userAddress}
-                    vsp={clearingPrice?.tokenIn.toNumber() || 0}
+                    vsp={clearingPrice ? Number(utils.formatEther(clearingPrice.tokenIn)) : 0}
+                    auction={auction}
                   />
                 </CardBody>
               )}
@@ -334,7 +345,7 @@ export function AuctionView() {
             )}
             <TokenFooter auction={auction} />
           </Flex>
-          {isAuctionOpen(auction) && !isMobile && (
+          {isAuctionOpen(auction) && !isMobile && bids.length && (
             <Flex flexDirection="column" width="377px" marginLeft="24px">
               <Card border="none">
                 <CardBody display="flex" borderBottom="1px dashed #DDDDE3" padding={theme.space[4]}>

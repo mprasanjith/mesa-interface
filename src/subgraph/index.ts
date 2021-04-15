@@ -1,7 +1,7 @@
 // Externals
 
 import axios from 'axios'
-import { BigNumber } from 'ethers'
+import { utils } from 'ethers'
 
 //interface
 import { Auction, AuctionBid, auctionType } from '../interfaces/Auction'
@@ -20,7 +20,6 @@ export const getAuctionsData = async (auctionsRequest: Promise<any>): Promise<Au
   const fixedPriceAuctions: Auction[] = (await auctionsRequest).fixedPriceAuctions
   const addFixedPriceAuctionsType = fixedPriceAuctions.map(item => ({ ...item, type: fixedPriceAuction }))
   const auctionsArray = [...addFairSaleType, ...addFixedPriceAuctionsType]
-  console.log(auctionsArray)
   return auctionsArray
 }
 
@@ -36,8 +35,8 @@ export const generateInitialAuctionData = async (
 ): Promise<AuctionBid[]> => {
   const auctionBids: AuctionBid[] = (await auctionBidsRequest)[auctiontypes].bids.map((item: AuctionBid) => ({
     ...item,
-    tokenOut: BigNumber.from(item.tokenOut),
-    tokenIn: BigNumber.from(item.tokenIn),
+    tokenOut: utils.parseUnits(item.tokenOut.toString(), 18),
+    tokenIn: utils.parseUnits(item.tokenIn.toString(), 18),
   }))
 
   return auctionBids
