@@ -16,9 +16,10 @@ export interface AuctionBid {
   createdAt?: number // The UTC timestamp at which the bid was placed
   updatedAt?: number // The UTC timestamp at which the bid was updated
   deletedAt?: number // The UTC timestamp at which the bid was deleted
-  tokenIn: BigNumber // number of tokens the investor wants to buy
+  tokenIn: BigNumber // number of tokens the investor pays
   tokenOut: BigNumber // number of tokens the investor wants to buy
   address: string // The bidder's Ethereum address
+  price?: number // only for front-end usage
 }
 
 export interface AuctionToken {

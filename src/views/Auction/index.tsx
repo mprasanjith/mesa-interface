@@ -27,6 +27,7 @@ import { CardTitle } from 'src/components/CardTitle'
 import { CardBody } from 'src/components/CardBody'
 import { MobileFooter } from 'src/components/MobileFooter'
 import { BarChart } from './components/BarChart'
+import { OrderBookChart } from './components/OrderBookChart'
 import { Card } from 'src/components/Card'
 import { Flex } from 'src/components/Flex'
 import { FormButton } from 'src/components/FormButton'
@@ -294,6 +295,26 @@ export function AuctionView() {
                   />
                 </CardBody>
               )}
+              <CardBody
+                display="flex"
+                padding="0 16px 16px"
+                border="none"
+                ref={e => {
+                  if (e) {
+                    ref.current = e
+                    setWidth(e.clientWidth)
+                  }
+                }}
+              >
+                <OrderBookChart
+                  width={containerWidth}
+                  height={600}
+                  data={bids}
+                  userAddress={userAddress}
+                  vsp={clearingPrice ? Number(utils.formatEther(clearingPrice.tokenIn)) : 0}
+                  auction={auction}
+                />
+              </CardBody>  
             </Card>
             {bids && bids.length > 0 && (
               <Card mt={theme.space[4]} marginX={isMobile ? '8px' : ''} border="none">

@@ -7,7 +7,7 @@ import React, { useRef, useEffect } from 'react'
 // Interfaces
 import { Auction, AuctionBid } from 'src/interfaces/Auction'
 
-interface BarChartComponentProps {
+interface OrderBookChartComponentProps {
   width: number
   height: number
   data: AuctionBid[]
@@ -16,11 +16,28 @@ interface BarChartComponentProps {
   auction: Auction
 }
 
-export const BarChart: React.FC<BarChartComponentProps> = ({ width, height, data, userAddress, vsp, auction }) => {
+export interface OrderBookSlice {
+      price: number
+      sum: number
+}
+
+export const OrderBookChart: React.FC<OrderBookChartComponentProps> = ({ width, height, data, userAddress, vsp, auction }) => {
   const ref = useRef<SVGSVGElement>(null)
 
-  const getBidPricePerShare = (bid: AuctionBid ) => Number(utils.formatEther(bid.tokenIn)) / Number(utils.formatEther(bid.tokenOut))
+  const calcBidPricePerShare = (bid: AuctionBid ) => Number(utils.formatEther(bid.tokenIn)) / Number(utils.formatEther(bid.tokenOut))
   
+  for(const bid of data){
+      bid.price = calcBidPricePerShare(bid)
+  }
+
+  const sortedData = data.sort(
+      (first, second) => first.price - second.price
+  )
+
+  //data.map(item => item.price = calcBidPricePerShare(item))
+
+  const getBidPricePerShare = (bid: AuctionBid ) => Number(utils.formatEther(bid.tokenIn)) / Number(utils.formatEther(bid.tokenOut))
+
   const getBidPriceText = (bid: AuctionBid, fontSize: number ) => {
     return `${(Number(utils.formatEther(bid.tokenIn)) / Number(utils.formatEther(bid.tokenOut))).toFixed(3)}`
   }
@@ -47,57 +64,108 @@ export const BarChart: React.FC<BarChartComponentProps> = ({ width, height, data
     const svg = d3.select(ref.current)
 
     const sortedData = data.sort(
-      (first, second) => getBidPricePerShare(second) - getBidPricePerShare(first)
+      (first, second) => first.price - second.price
     )
-    const activeBids = sortedData.filter(item => getBidPricePerShare(item) >= 0.1)
-    const inactiveBids = sortedData.filter(item => getBidPricePerShare(item) < 0.1)
-    const activeChartData: any[] = activeBids.map(item => Number(utils.formatEther(item.tokenOut)))
-    const inactiveChartData: any[] = inactiveBids.map(item => Number(utils.formatEther(item.tokenOut)))
+
+    const lowestbid = getBidPricePerShare(sortedData[1])
+    const highestbid = getBidPricePerShare(sortedData[sortedData.length-1])
+
+    const diff = highestbid - lowestbid
+    const numberOfSlices = 10
+    
+    const OrderBookSlices: any[] = []
+
+    for (let i = 0; i <= numberOfSlices - 1; i++) {
+
+      const low = lowestbid + (i/numberOfSlices*diff)
+      const high = lowestbid + (i+1)/numberOfSlices*diff
+      const priceOfSlice = (high + low) / 2
+
+      let sumOfSlice = 0
+
+      const filteredNumbers = sortedData.filter(function (item) {
+          if (getBidPricePerShare(item) < high && getBidPricePerShare(item) >= low){
+            sumOfSlice = sumOfSlice + Number(utils.formatEther(item.tokenOut))
+            return true
+          }
+      });
+
+      const slice: OrderBookSlice = { price: priceOfSlice, sum: sumOfSlice }
+      OrderBookSlices.push(slice)
+    }
+    OrderBookSlices.reverse()
 
     svg.selectAll('g').remove()
-    const activeSelection = svg.append('g').attr('class', 'activeSelection').selectAll('rect').data(activeChartData)
+    const activeOrderBook = svg.append('g').attr('class', 'activeOrderBook').selectAll('rect').data(OrderBookSlices)
 
-    const barHeight = (height - 5) / sortedData.length
-    const activeHeight = activeChartData.length * barHeight + 5
+    const barHeight = (height - 5) / OrderBookSlices.length
+    const activeHeight = OrderBookSlices.length * barHeight + 5
 
     const xScale = d3
       .scaleLinear()
-      .domain([0, d3.max([...activeChartData, ...inactiveChartData])])
+      .domain([0, 23826])
       .range([0, width - 300])
-
+    //.domain([0, d3.max([...OrderBookSlices])])
+        
     let fontSize = (barHeight - 5) * 0.6
+
     if (fontSize > 15) {
       fontSize = 15
     }
-
-    activeSelection
+    /*
+    activeOrderBook
       .enter()
       .append('rect')
-      .attr('y', (d: number, i: number) => barHeight * i)
+      .attr('y', (i: number) => barHeight * i)
       .attr('height', barHeight - 5)
       .attr('fill', '#4B9E985A')
       .attr('width', (d: number) => xScale(d) + 50)
       .attr('x', (d: number) => 150)
+    */
+    activeOrderBook
+      .enter()
+      .append('rect')
+      .attr('x', 150)
+      .attr('y', (d: number, i: number) =>  barHeight * i + 1)
+      .attr('height', barHeight - 5)
+      .attr('width', (d: number, i: number) => xScale(OrderBookSlices[i].sum))
+      .attr('fill', '#4B9E985A')
 
-    activeSelection
+    activeOrderBook
       .enter()
       .append('text')
-      .attr('x', (d: number) => 155)
+      .attr('fill', '#EE0000')
+      .attr('x', 150)
       .attr('y', (d: number, i: number) => barHeight * i - 1 + (barHeight - fontSize) / 2)
       .attr('font-size', (d: number, i: number) => fontSize)
       .attr('dy', '.71em')
-      .attr('text-anchor', 'start')
-      .text((d: number, i: number) => getBidPriceText(activeBids[i], fontSize))
+      .attr('text-anchor', 'right')
+      .text((d: number, i: number) => OrderBookSlices[i].sum.toFixed(3) )
 
-    activeSelection
+    activeOrderBook
       .enter()
       .append('text')
-      .attr('x', (d: number) => xScale(d) + 195)
+      .attr('fill', '#EE0000')
+      .attr('x', 300)
       .attr('y', (d: number, i: number) => barHeight * i - 1 + (barHeight - fontSize) / 2)
       .attr('font-size', (d: number, i: number) => fontSize)
       .attr('dy', '.71em')
       .attr('text-anchor', 'end')
-      .text((d: number, i: number) => getBidAmountText(activeBids[i], fontSize))
+      .text((d: number, i: number) => OrderBookSlices[i].price.toFixed(3) )
+
+    activeOrderBook
+      .enter()
+      .append('text')
+      .attr('fill', '#EE0000')
+      .attr('x', 450)
+      .attr('y', (d: number, i: number) => barHeight * i - 1 + (barHeight - fontSize) / 2)
+      .attr('font-size', (d: number, i: number) => fontSize)
+      .attr('dy', '.71em')
+      .attr('text-anchor', 'end')
+      .text((d: number, i: number) => lowestbid.toFixed(3) )
+
+
+
 
     const lineContainer = svg.append('g')
     lineContainer
@@ -127,44 +195,6 @@ export const BarChart: React.FC<BarChartComponentProps> = ({ width, height, data
       .attr('text-anchor', 'middle')
       .text(() => `CP ${vsp.toFixed(2)} ${auction.tokenIn?.symbol}`)
 
-
-
-    if (inactiveChartData.length > 0) {
-      const inactiveSelection = svg
-        .append('g')
-        .attr('class', 'inactiveSelection')
-        .selectAll('rect')
-        .data(inactiveChartData)
-
-      inactiveSelection
-        .enter()
-        .append('rect')
-        .attr('y', (d: number, i: number) => barHeight * i + activeHeight)
-        .attr('height', barHeight - 5)
-        .attr('fill', '#DDDDE3')
-        .attr('width', (d: number) => xScale(d) + 50)
-        .attr('x', (d: number) => 150)
-
-      inactiveSelection
-        .enter()
-        .append('text')
-        .attr('x', (d: number) => 155)
-        .attr('y', (d: number, i: number) => barHeight * i + activeHeight - 1 + (barHeight - fontSize) / 2)
-        .attr('font-size', (d: number, i: number) => fontSize)
-        .attr('dy', '.71em')
-        .attr('text-anchor', 'start')
-        .text((d: number, i: number) => getBidPriceText(inactiveBids[i], fontSize))
-
-      inactiveSelection
-        .enter()
-        .append('text')
-        .attr('x', (d: number) => xScale(d) + 195)
-        .attr('y', (d: number, i: number) => barHeight * i + activeHeight - 1 + (barHeight - fontSize) / 2)
-        .attr('font-size', (d: number, i: number) => fontSize)
-        .attr('dy', '.71em')
-        .attr('text-anchor', 'end')
-        .text((d: number, i: number) => getBidAmountText(inactiveBids[i], fontSize))
-    }
   }
 
   useEffect(() => {
@@ -186,4 +216,4 @@ export const BarChart: React.FC<BarChartComponentProps> = ({ width, height, data
   )
 }
 
-export default BarChart
+export default OrderBookChart

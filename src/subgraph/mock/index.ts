@@ -147,8 +147,9 @@ export const mocks = {
     deletedAt: () => casual.unix_time,
     startDate: () => casual.random_element([1586276387, 1583601587]),
     endDate: () => casual.random_element([1646673587, 1644254387]),
-    tokenAmount: () => casual.integer(1, 1000),0
-    bids: () => initialBid,
+    tokenAmount: () => casual.integer(1, 1000),
+    //bids: () => initialBid,
+    bids: [...new Array(casual.integer(2, 1000))]
   }),
   FixedPriceAuction: () => ({
     status: () => casual.random_element(['live', 'upcoming', 'closed']),
