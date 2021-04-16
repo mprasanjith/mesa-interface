@@ -19,24 +19,31 @@ interface OrderBookChartComponentProps {
 export interface OrderBookSlice {
       price: number
       sum: number
+      bids: number
 }
 
 export const OrderBookChart: React.FC<OrderBookChartComponentProps> = ({ width, height, data, userAddress, vsp, auction }) => {
   const ref = useRef<SVGSVGElement>(null)
 
-  const calcBidPricePerShare = (bid: AuctionBid ) => Number(utils.formatEther(bid.tokenIn)) / Number(utils.formatEther(bid.tokenOut))
-  
-  for(const bid of data){
+  const getBidPricePerShare = (bid: AuctionBid ) => Number(utils.formatEther(bid.tokenIn)) / Number(utils.formatEther(bid.tokenOut))
+
+  /*
+  const setPrice = (bid: AuctionBid) => {
       bid.price = calcBidPricePerShare(bid)
   }
+ 
+  for(const bid of data){
+      setPrice(bid)
+  }
+  */
 
+  /*
   const sortedData = data.sort(
       (first, second) => first.price - second.price
   )
-
+  */
   //data.map(item => item.price = calcBidPricePerShare(item))
 
-  const getBidPricePerShare = (bid: AuctionBid ) => Number(utils.formatEther(bid.tokenIn)) / Number(utils.formatEther(bid.tokenOut))
 
   const getBidPriceText = (bid: AuctionBid, fontSize: number ) => {
     return `${(Number(utils.formatEther(bid.tokenIn)) / Number(utils.formatEther(bid.tokenOut))).toFixed(3)}`
@@ -56,6 +63,9 @@ export const OrderBookChart: React.FC<OrderBookChartComponentProps> = ({ width, 
     }`
   }
 
+  const sortedData = data.sort(
+    (first, second) => getBidPricePerShare(first) - getBidPricePerShare(second)
+  )
 
   const draw = () => {
     if (width <= 232) {
@@ -63,14 +73,11 @@ export const OrderBookChart: React.FC<OrderBookChartComponentProps> = ({ width, 
     }
     const svg = d3.select(ref.current)
 
-    const sortedData = data.sort(
-      (first, second) => first.price - second.price
-    )
-
-    const lowestbid = getBidPricePerShare(sortedData[1])
+    const lowestbid = getBidPricePerShare(sortedData[0])
     const highestbid = getBidPricePerShare(sortedData[sortedData.length-1])
 
     const diff = highestbid - lowestbid
+
     const numberOfSlices = 10
     
     const OrderBookSlices: any[] = []
@@ -82,15 +89,17 @@ export const OrderBookChart: React.FC<OrderBookChartComponentProps> = ({ width, 
       const priceOfSlice = (high + low) / 2
 
       let sumOfSlice = 0
+      let sumOfBid = 0
 
       const filteredNumbers = sortedData.filter(function (item) {
           if (getBidPricePerShare(item) < high && getBidPricePerShare(item) >= low){
             sumOfSlice = sumOfSlice + Number(utils.formatEther(item.tokenOut))
+            sumOfBid = sumOfBid + 1
             return true
           }
       });
 
-      const slice: OrderBookSlice = { price: priceOfSlice, sum: sumOfSlice }
+      const slice: OrderBookSlice = { price: priceOfSlice, sum: sumOfSlice, bids: sumOfBid }
       OrderBookSlices.push(slice)
     }
     OrderBookSlices.reverse()
@@ -125,7 +134,7 @@ export const OrderBookChart: React.FC<OrderBookChartComponentProps> = ({ width, 
     activeOrderBook
       .enter()
       .append('rect')
-      .attr('x', 150)
+      .attr('x', 10)
       .attr('y', (d: number, i: number) =>  barHeight * i + 1)
       .attr('height', barHeight - 5)
       .attr('width', (d: number, i: number) => xScale(OrderBookSlices[i].sum))
@@ -135,12 +144,12 @@ export const OrderBookChart: React.FC<OrderBookChartComponentProps> = ({ width, 
       .enter()
       .append('text')
       .attr('fill', '#EE0000')
-      .attr('x', 150)
+      .attr('x', 20)
       .attr('y', (d: number, i: number) => barHeight * i - 1 + (barHeight - fontSize) / 2)
       .attr('font-size', (d: number, i: number) => fontSize)
       .attr('dy', '.71em')
       .attr('text-anchor', 'right')
-      .text((d: number, i: number) => OrderBookSlices[i].sum.toFixed(3) )
+      .text((d: number, i: number) => OrderBookSlices[i].price.toFixed(3) )
 
     activeOrderBook
       .enter()
@@ -151,7 +160,7 @@ export const OrderBookChart: React.FC<OrderBookChartComponentProps> = ({ width, 
       .attr('font-size', (d: number, i: number) => fontSize)
       .attr('dy', '.71em')
       .attr('text-anchor', 'end')
-      .text((d: number, i: number) => OrderBookSlices[i].price.toFixed(3) )
+      .text((d: number, i: number) => OrderBookSlices[i].sum.toFixed(3) + ' TKN' )
 
     activeOrderBook
       .enter()
@@ -162,7 +171,7 @@ export const OrderBookChart: React.FC<OrderBookChartComponentProps> = ({ width, 
       .attr('font-size', (d: number, i: number) => fontSize)
       .attr('dy', '.71em')
       .attr('text-anchor', 'end')
-      .text((d: number, i: number) => lowestbid.toFixed(3) )
+      .text((d: number, i: number) =>  OrderBookSlices[i].bids)
 
 
 
