@@ -36,12 +36,12 @@ describe('PlaceBidForm', () => {
         />
       </ThemeProvider>
     )
-    expect(getByText('Token Price')).toBeInTheDocument()
-    expect(getByText(/Enter the price you pay per/)).toBeInTheDocument()
+    expect(getByText('Amount')).toBeInTheDocument()
+    expect(getByText(/Enter the maximum price/)).toBeInTheDocument()
     expect(getByText(/token\./)).toBeInTheDocument()
     expect(getByText('Amount')).toBeInTheDocument()
     expect(getByText(/Enter the amount of/)).toBeInTheDocument()
-    expect(getByText(/you would like to trade. You have/)).toBeInTheDocument()
+    expect(getByText(/to invest. You have/)).toBeInTheDocument()
     expect(getByTestId('submit-button')).toHaveAttribute('disabled', '')
 
     const amountInput = getByLabelText('tokenAmount') as HTMLInputElement

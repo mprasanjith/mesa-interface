@@ -177,7 +177,7 @@ export const PlaceBidForm = ({ auction, onSubmit, currentSettlementPrice, isFixe
     <FormBody id="createBidForm" onSubmit={onFormSubmit}>
       {!isFixed && (
         <FormGroup theme={theme}>
-          <FormLabel>Token Price</FormLabel>
+          <FormLabel>Amount</FormLabel>
           <Flex flexDirection="column" flex={1}>
             <FormContainer>
               <FormText data-testid="price-value">{`${tokenPrice.toString()} ${auction.tokenIn?.symbol}`}</FormText>
@@ -193,13 +193,13 @@ export const PlaceBidForm = ({ auction, onSubmit, currentSettlementPrice, isFixe
             <FormDescription>
               {isFixed
                 ? `You have 123,456 ${auction.tokenIn?.symbol}.`
-                : `Enter the amount of ${auction.tokenIn?.symbol} you would like to trade. You have 123,456 ${auction.tokenIn?.symbol}.`}
+                : `Enter the amount of ${auction.tokenIn?.symbol} to invest. You have 123,456 ${auction.tokenIn?.symbol}.`}
             </FormDescription>
           </Flex>
         </FormGroup>
       )}
       <FormGroup theme={theme}>
-        <FormLabel>Amount</FormLabel>
+        <FormLabel>Max Price</FormLabel>
         <Flex flexDirection="column" flex={1}>
           <FormContainer>
             <FormText data-testid="amount-value">{`${tokenAmount.toString()} ${auction.tokenIn?.symbol}/${
@@ -213,7 +213,7 @@ export const PlaceBidForm = ({ auction, onSubmit, currentSettlementPrice, isFixe
               onChange={onTokenAmountChange}
             />
           </FormContainer>
-          <FormDescription>Enter the price you pay per {`${auction.tokenOut?.symbol}`} token.</FormDescription>
+          <FormDescription>Enter the maximum price to pay for 1 {`${auction.tokenOut?.symbol}`} token.</FormDescription>
         </Flex>
       </FormGroup>
       {isFixed && <FixedTerm>{`You'll get 1,000 ${auction.tokenOut?.symbol}`}</FixedTerm>}

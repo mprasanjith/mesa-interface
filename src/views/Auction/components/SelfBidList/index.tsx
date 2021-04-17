@@ -47,12 +47,6 @@ const TokenPriceLabel = styled.div<ColorProps & SpaceProps>(
   space
 )
 
-const InfoImg = styled.img({
-  width: '14px',
-  height: '14px',
-  marginLeft: '4px',
-})
-
 type ModalContainerProps = {
   itemIndex: number
 }
@@ -84,6 +78,37 @@ const ModalMenu = styled.div({
   },
 })
 
+type TipContainerProps = {
+  itemIndex: number
+}
+
+const TipContainer = styled.div<TipContainerProps>(props => ({
+  width: 'auto',
+  height: 'auto',
+  padding: '8px 16px',
+  display: 'flex',
+  flexDirection: 'column',
+  position: 'absolute',
+  left: '0',
+  top: `${props.itemIndex * 50 + 58}px`,
+  background: '#FFFFFF',
+  boxShadow: '0px 4px 12px rgba(0, 6, 41, 0.1)',
+  zIndex: 200,
+}))
+
+const TipText = styled.div({
+  fontStyle: 'normal',
+  fontWeight: 500,
+  fontSize: '14px',
+  lineHeight: '21px',
+  color: '#7B7F93',
+  padding: '8px 0',
+  cursor: 'pointer',
+  ':hover': {
+    color: '#304FFE',
+  },
+})
+
 type IconImgProps = SpaceProps & {
   isButton?: boolean
 }
@@ -92,6 +117,16 @@ const IconImg = styled.img<IconImgProps>(
   props => ({
     width: '16px',
     height: '16px',
+    cursor: props.isButton ? 'pointer' : 'auto',
+  }),
+  space
+)
+
+const InfoImg = styled.img<IconImgProps>(
+  props => ({
+    width: '14px',
+    height: '14px',
+    marginLeft: '4px',
     cursor: props.isButton ? 'pointer' : 'auto',
   }),
   space
@@ -109,6 +144,8 @@ interface SelfBidListProps {
 export function SelfBidList({ auction, clearingPrice, bids, isFixed }: SelfBidListProps) {
   const [bidMenu, setBidMenu] = useState<number>(-1)
 
+  const [toolTip, setToolTip] = useState<number>(-1)
+
   const { isMobile } = useWindowSize()
 
   const toggleBidMenu = (index: number) => {
@@ -117,6 +154,14 @@ export function SelfBidList({ auction, clearingPrice, bids, isFixed }: SelfBidLi
       return
     }
     setBidMenu(index)
+  }
+
+  const toggleToolTip = (index: number) => {
+    if (toolTip === index) {
+      setToolTip(-1)
+      return
+    }
+    setToolTip(index)
   }
 
   const vsp = clearingPrice ? Number(utils.formatEther(clearingPrice.tokenIn.div(clearingPrice.tokenOut))) : 0
@@ -153,14 +198,12 @@ export function SelfBidList({ auction, clearingPrice, bids, isFixed }: SelfBidLi
                 </TokenPriceLabel>
               </Flex>
               <Flex flex={3}>
-                <TokenPriceLabel>{`${numeral(bid.tokenIn.toNumber()).format('0')} ${
-                  auction.tokenOut?.symbol
-                }`}</TokenPriceLabel>
+                <TokenPriceLabel>{`${numeral(bid.tokenIn.toNumber()).format('0')} ${auction.tokenOut?.symbol}`} in</TokenPriceLabel>
               </Flex>
               <Flex flex={6}>
                 <TokenPriceLabel>{`${numeral(bid.tokenIn.toNumber()).format('0')} ${
                   auction.tokenIn?.symbol
-                }`}</TokenPriceLabel>
+                } `}</TokenPriceLabel>
                 <Flex flex={1} />
                 <IconImg src={MoreSVG} marginRight="8px" isButton={true} onClick={() => toggleBidMenu(index)} />
               </Flex>
@@ -181,16 +224,16 @@ export function SelfBidList({ auction, clearingPrice, bids, isFixed }: SelfBidLi
     <Flex flexDirection="column" style={{ position: 'relative' }}>
       <Flex flexDirection="row" alignItems="center" marginBottom="8px" padding={isMobile ? '0 8px' : '0 16px'}>
         <Flex flex={3}>
-          <ColumnLabel>{isFixed ? 'Type' : 'Token Price'}</ColumnLabel>
+          <ColumnLabel>{isFixed ? 'Type' : `Price for ${auction.tokenOut?.symbol}`}</ColumnLabel>
         </Flex>
         <Flex flex={3}>
-          <ColumnLabel>Amount</ColumnLabel>
+          <ColumnLabel>Invested </ColumnLabel>
         </Flex>
 
         {isAuctionOpen(auction) ? (
           <Flex flex={3} flexDirection="row" alignItems="center">
             <ColumnLabel>Est. Invested</ColumnLabel>
-            <InfoImg src={InfoSVG} />
+            <InfoImg src={InfoSVG} isButton={true} />
           </Flex>
         ) : (
           <Flex flex={isMobile ? 5 : 3} flexDirection="row" alignItems="center">
@@ -200,7 +243,7 @@ export function SelfBidList({ auction, clearingPrice, bids, isFixed }: SelfBidLi
 
         {isAuctionOpen(auction) ? (
           <Flex flex={3} flexDirection="row" alignItems="center">
-            <ColumnLabel>{auction.tokenOut?.symbol}</ColumnLabel>
+            <ColumnLabel>Estimate {auction.tokenOut?.symbol}</ColumnLabel>
           </Flex>
         ) : (
           <Flex flex={isMobile ? 1 : 3} flexDirection="row" alignItems="center" justifyContent="flex-end">
@@ -224,16 +267,23 @@ export function SelfBidList({ auction, clearingPrice, bids, isFixed }: SelfBidLi
             <Flex flex={3}>
               <TokenPriceLabel backgroundColor={vsp <= bidPrice ? '#4B9E985A' : '#E15F5F5A'}>
                 {`${numeral(bidPrice).format('0.[00]')} ${auction.tokenIn?.symbol}`}
+                <InfoImg src={InfoSVG} isButton={true} onClick={() => toggleToolTip(index)} /> 
+                {toolTip !== -1 && (
+                  <TipContainer itemIndex={toolTip}>
+                    <TipText>{`${numeral(bidPrice).format('0.[000000000000000000]')}`}</TipText>
+                  </TipContainer>
+                  )}
+
               </TokenPriceLabel>
             </Flex>
             <Flex flex={3}>
-              <TokenPriceLabel>{`${numeral(Number(utils.formatEther(bid.tokenIn))).format('0')} ${
-                auction.tokenOut?.symbol
+              <TokenPriceLabel>{`${numeral(Number(utils.formatEther(bid.tokenIn))).format('0.[00]')} ${
+                auction.tokenIn?.symbol
               }`}</TokenPriceLabel>
             </Flex>
             {isAuctionOpen(auction) && (
               <Flex flex={3}>
-                <TokenPriceLabel>{`${numeral(Number(utils.formatEther(bid.tokenIn))).format('0')} ${
+                <TokenPriceLabel>{`${numeral(Number(utils.formatEther(bid.tokenIn))).format('0.[00]')} ${
                   auction.tokenIn?.symbol
                 }`}</TokenPriceLabel>
               </Flex>
@@ -276,6 +326,12 @@ export function SelfBidList({ auction, clearingPrice, bids, isFixed }: SelfBidLi
       })}
       {bidMenu !== -1 && (
         <ModalContainer itemIndex={bidMenu}>
+          <ModalMenu>Change Bid Price</ModalMenu>
+          <ModalMenu>Withdraw Bid</ModalMenu>
+        </ModalContainer>
+      )}
+      {toolTip !== -1 && (
+        <ModalContainer itemIndex={toolTip}>
           <ModalMenu>Change Bid Price</ModalMenu>
           <ModalMenu>Withdraw Bid</ModalMenu>
         </ModalContainer>

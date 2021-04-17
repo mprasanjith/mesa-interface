@@ -44,9 +44,9 @@ export const schemaString = `
     # Minimum amount per bid
     minimumBidAmount: Int
     # Bidding token (ie: DAI, USDC)
-    tokenIn: AuctionToken
+    tokenIn: AuctionTokenIn
     # Auctioning token
-    tokenOut: AuctionToken
+    tokenOut: AuctionTokenOut
     # List of bids
     bids: [FairSaleBid!]
     # The minimal funding threshold for executing the settlement. If funding is not reached, everyone will get back their investment
@@ -67,8 +67,8 @@ export const schemaString = `
     endDate: Int # Close timestamp
     # Amount to sell
     sellAmount: String
-    tokenIn: AuctionToken
-    tokenOut: AuctionToken
+    tokenIn: AuctionTokenIn
+    tokenOut: AuctionTokenOut
     # Minimum amount per bid
     minbiddingAmount: Int
     allocationMin: Int
@@ -88,9 +88,9 @@ export const schemaString = `
     # The UTC timestamp at which the bid was deleted
     deletedAt: Int
     # Int of tokens the investor wants to buy
-    tokenIn: Float
+    tokenIn: Int
     # Int of tokens the investor wants to buy
-    tokenOut: Float
+    tokenOut: Int
     # The bidder's Ethereum address
     address: String
   }
@@ -110,7 +110,7 @@ export const schemaString = `
   }
   
   # AuctionToken
-  type AuctionToken  {
+  type AuctionTokenIn  {
     # Token address
     id: ID!
     # Token name, from the smart contract ERC20.name()
@@ -123,6 +123,18 @@ export const schemaString = `
     decimals: Int
   }
 
+  type AuctionTokenOut  {
+    # Token address
+    id: ID!
+    # Token name, from the smart contract ERC20.name()
+    name: String
+    # ERC20 Token's contract address
+    address: String
+    # Symbol, from ERC20.symbol()
+    symbol: String
+    # Decimal, from ERC.decimals()
+    decimals: Int
+  }
   type Query {
     fairSales (id: ID): [FairSale]
     fixedPriceAuctions (id: ID): [FixedPriceAuction]
@@ -148,9 +160,9 @@ export const mocks = {
     startDate: () => casual.random_element([1586276387, 1583601587]),
     endDate: () => casual.random_element([1646673587, 1644254387]),
     tokenAmount: () => casual.integer(1, 1000),
-    bids: () => initialBid,
+    //bids: () => initialBid,
     //bids: () => [FairSaleBid!]
-    //bids:() => new MockList(10),
+    bids:() => new MockList(50),
 
     //bids: [...new Array(casual.integer(2, 1000))]
   }),
@@ -177,10 +189,16 @@ export const mocks = {
     deletedAt: () => casual.unix_time,
     buyer: () => casual.numerify(address),
   }),
-  AuctionToken: () => ({
+  AuctionTokenIn: () => ({
     address: () => casual.numerify(address),
     name: () => casual.company_name,
-    symbol: () => casual.state_abbr,
+    symbol: () => 'DAI',
+    decimals: () => casual.integer(1, 18),
+  }),
+  AuctionTokenOut: () => ({
+    address: () => casual.numerify(address),
+    name: () => casual.company_name,
+    symbol: () => 'AQUA',
     decimals: () => casual.integer(1, 18),
   }),
   Query: () => ({
