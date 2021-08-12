@@ -32,7 +32,7 @@ jobs:
         id: deployment
         with:
           step: start
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
           env: dev
 
       - name: Deploy to IPFS
@@ -42,7 +42,7 @@ jobs:
           web3_token: ${{ secrets.WEB3_STORAGE_TOKEN }}
           path_to_add: 'build'
 
-      - name: update deployment status
+      - name: Update Deployment Status
         uses: bobheadxi/deployments@v0.4.3
         if: always()
         with:
