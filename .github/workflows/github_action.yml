@@ -36,13 +36,11 @@ jobs:
           env: dev
 
       - name: Deploy to IPFS
-        uses: aquiladev/ipfs-action@v0.1.6
-        id: ipfs
+        uses: web3-storage/add-to-web3@v1
+        id: web3
         with:
-          path: ./build
-          service: pinata
-          pinataKey: ${{ secrets.PINATA_KEY }}
-          pinataSecret: ${{ secrets.PINATA_SECRET }}
+          web3_token: ${{ secrets.WEB3_STORAGE_TOKEN }}
+          path_to_add: 'build'
 
       - name: update deployment status
         uses: bobheadxi/deployments@v0.4.3
@@ -52,4 +50,4 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
           status: ${{ job.status }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: "https://ipfs.io/ipfs/${{ steps.ipfs.outputs.hash }}"
+          env_url: 'https://${{ steps.web3.outputs.cid }}.ipfs.dweb.link'
