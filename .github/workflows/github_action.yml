@@ -27,10 +27,29 @@ jobs:
       - name: Build Dapp
         run: npm run build:xdai
 
+      - name: Start Deployment
+        uses: bobheadxi/deployments@v0.4.3
+        id: deployment
+        with:
+          step: start
+          token: ${{ secrets.GITHUB_TOKEN }}
+          env: dev
+
       - name: Deploy to IPFS
         uses: aquiladev/ipfs-action@v0.1.6
+        id: ipfs
         with:
           path: ./build
           service: pinata
           pinataKey: ${{ secrets.PINATA_KEY }}
           pinataSecret: ${{ secrets.PINATA_SECRET }}
+
+      - name: update deployment status
+        uses: bobheadxi/deployments@v0.4.3
+        if: always()
+        with:
+          step: finish
+          token: ${{ secrets.GH_TOKEN }}
+          status: ${{ job.status }}
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+          env_url: "https://ipfs.io/ipfs/${{ steps.ipfs.outputs.hash }}"
