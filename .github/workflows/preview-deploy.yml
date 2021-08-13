@@ -1,8 +1,12 @@
-name: Develop CI/CD
+name: IPFS Preview Deploy
+
 on:
   push:
     branches:
       - dev
+  pull_request:
+    types: [opened, synchronize, reopened]
+
 jobs:
   develop-ci:
     runs-on: ubuntu-latest
@@ -10,13 +14,24 @@ jobs:
       matrix:
         node-version: [14.x]
     steps:
-      - name: checkout
+      - name: Inject slug variables
+        uses: rlespinasse/github-slug-action@3.5.1
+
+      - name: Checkout
         uses: actions/checkout@v2
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+
+      - name: Start Deployment
+        uses: bobheadxi/deployments@v0.6.0
+        id: deployment
+        with:
+          step: start
+          token: ${{ secrets.GITHUB_TOKEN }}
+          env: ${{ env.GITHUB_REF_SLUG_URL }}
 
       - name: Remove dependencies
         run: rm -rf package-lock.json node_modules
@@ -27,14 +42,6 @@ jobs:
       - name: Build Dapp
         run: npm run build:xdai
 
-      - name: Start Deployment
-        uses: bobheadxi/deployments@v0.4.3
-        id: deployment
-        with:
-          step: start
-          token: ${{ secrets.GH_TOKEN }}
-          env: dev
-
       - name: Deploy to IPFS
         uses: web3-storage/add-to-web3@v1
         id: web3
@@ -43,11 +50,11 @@ jobs:
           path_to_add: 'build'
 
       - name: Update Deployment Status
-        uses: bobheadxi/deployments@v0.4.3
+        uses: bobheadxi/deployments@v0.6.0
         if: always()
         with:
           step: finish
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           status: ${{ job.status }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
           env_url: 'https://${{ steps.web3.outputs.cid }}.ipfs.dweb.link'
