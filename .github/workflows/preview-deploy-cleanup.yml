@@ -17,4 +17,4 @@ jobs:
         with:
           step: deactivate-env
           token: ${{ secrets.GITHUB_TOKEN }}
-          env: ${{ env.GITHUB_REF_SLUG_URL }}
+          env: ${{ env.GITHUB_HEAD_REF_SLUG_URL }}
