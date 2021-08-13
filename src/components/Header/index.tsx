@@ -106,7 +106,7 @@ export const Header: React.FC = () => {
           <Wrapper padding="0 0 0 24px" backgroundColor="#F2F2F2">
             <Flex flexDirection="column" flex={1}>
               <Title>Aqua</Title>
-              <Description marginLeft="0">from DXdao</Description>
+              <Description marginLeft="0">from DXdao - Live on IPFS</Description>
             </Flex>
             <MenuIcon src={CloseImg} onClick={() => setMenuOpen(false)} />
           </Wrapper>
